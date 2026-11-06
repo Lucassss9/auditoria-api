@@ -1,0 +1,28 @@
+services:
+  auditoria-api:
+    image: postgres:17
+    container_name: auditoria-api
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    ports:
+      - "5433:5432"
+    restart: unless-stopped
+    volumes:
+      - audit-volume:/var/lib/postgresql/data
+
+  auditoria-pgadmin:
+    image: dpage/pgadmin4
+    container_name: auditoria_pg
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD}
+    ports:
+      - "5050:80"
+    restart: unless-stopped
+    volumes:
+      - audit-pg-volume:/var/lib/pgadmin
+
+volumes:
+  audit-volume:
+  audit-pg-volume:
