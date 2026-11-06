@@ -1,3 +1,6 @@
 spring:
   application:
     name: auditoria-api
+    ddl-auto: create
+    open-in-view: false
+    defer-datasource-initialization: true
