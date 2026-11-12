@@ -1,4 +1,4 @@
-package br.com.auditoria.config;
+package br.com.auditoria.security;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
