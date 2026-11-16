@@ -9,5 +9,5 @@ import java.util.List;
 @Repository
 public interface ResponsavelRepository extends JpaRepository<Responsavel, Long> {
 
-    List<Responsavel> findByObra(String obra);
+    List<Responsavel> findByObraId(String obra);
 }
