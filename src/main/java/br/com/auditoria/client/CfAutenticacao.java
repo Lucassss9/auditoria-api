@@ -3,7 +3,6 @@ package br.com.auditoria.client;
 import br.com.auditoria.dto.cfobras.LoginCfDto;
 import br.com.auditoria.dto.cfobras.TokenCfDto;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 
@@ -36,5 +35,10 @@ public class CfAutenticacao {
             token = tokenCfDto.access_token();
         }
         return token;
+    }
+
+    public String renovar() {
+        token = null;
+        return pegar();
     }
 }
