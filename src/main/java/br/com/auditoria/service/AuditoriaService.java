@@ -20,8 +20,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
-import java.util.Spliterator;
 
 @Service
 @RequiredArgsConstructor
@@ -62,6 +60,12 @@ public class AuditoriaService {
         }
 
         return paraDetalhe(auditoria, itemAuditoriaRepository.findByAuditoriaId(id));
+    }
+
+    @Transactional(readOnly = true)
+    public List<AuditoriaDetalheDto> listarAuditorias() {
+       return auditoriaRepository.findAll().stream().map(auditoria -> paraDetalhe(auditoria,
+               itemAuditoriaRepository.findByAuditoriaId(auditoria.getId()))).toList();
     }
 
     private AuditoriaDetalheDto paraDetalhe(Auditoria auditoria, List<ItemAuditoria> itens) {

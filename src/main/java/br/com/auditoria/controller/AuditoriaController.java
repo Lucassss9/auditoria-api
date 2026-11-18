@@ -10,6 +10,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/api")
 @RequiredArgsConstructor
@@ -28,5 +30,10 @@ public class AuditoriaController {
         AuditoriaDetalheDto auditoria = auditoriaService.buscarPorId(id);
 
         return auditoria == null ? ResponseEntity.notFound().build() : ResponseEntity.ok(auditoria);
+    }
+
+    @GetMapping("/auditorias")
+    public List<AuditoriaDetalheDto> buscarTodos() {
+        return auditoriaService.listarAuditorias();
     }
 }
