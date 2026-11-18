@@ -21,7 +21,11 @@ public class EstoqueMapper {
         String limpo = texto.replace("R$", "")
                 .replace(".", "")
                 .replace(",", ".")
-                .trim();
+                .replaceAll("[^0-9.-]", "");
+
+        if (limpo.isEmpty()) {
+            return null;
+        }
 
         return new BigDecimal(limpo);
     }
