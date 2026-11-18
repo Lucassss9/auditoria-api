@@ -2,17 +2,24 @@ package br.com.auditoria.client;
 
 import br.com.auditoria.dto.cfobras.EstoqueCfDto;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 
+import java.time.Duration;
+
 @Component
-public class CfObrasClientHttp {
+public class CfObrasClientHttp implements CfObrasClient {
 
     private final RestClient busca;
     private final CfAutenticacao cfAutenticacao;
 
     public CfObrasClientHttp(@Value("${CF_URL}") String url, CfAutenticacao cfAutenticacao) {
-        this.busca = RestClient.create(url);
+        SimpleClientHttpRequestFactory simpleClient = new SimpleClientHttpRequestFactory();
+        simpleClient.setConnectTimeout(Duration.ofSeconds(5));
+        simpleClient.setReadTimeout(Duration.ofSeconds(30));
+
+        this.busca = RestClient.builder().baseUrl(url).requestFactory(simpleClient).build();
         this.cfAutenticacao = cfAutenticacao;
     }
 
@@ -23,5 +30,4 @@ public class CfObrasClientHttp {
                 .retrieve()
                 .body(EstoqueCfDto.class);
     }
-
 }
