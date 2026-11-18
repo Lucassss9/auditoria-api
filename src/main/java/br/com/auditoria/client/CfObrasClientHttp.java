@@ -1,9 +1,11 @@
 package br.com.auditoria.client;
 
 import br.com.auditoria.dto.cfobras.EstoqueCfDto;
+import org.jspecify.annotations.Nullable;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Component;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestClient;
 
 import java.time.Duration;
@@ -24,6 +26,15 @@ public class CfObrasClientHttp implements CfObrasClient {
     }
 
     public EstoqueCfDto buscarEstoque(String filialId, int limite, int pulo) {
+        try {
+            return getEstoqueCfDto(filialId, limite, pulo);
+        } catch (HttpClientErrorException.Unauthorized tokenVencido) {
+            cfAutenticacao.renovar();
+            return getEstoqueCfDto(filialId, limite, pulo);
+        }
+    }
+
+    private @Nullable EstoqueCfDto getEstoqueCfDto(String filialId, int limite, int pulo) {
         return busca.get()
                 .uri("/estoque/register-filter/?limit={l}&skip={p}&filial={f}", limite, pulo, filialId)
                 .header("Authorization", cfAutenticacao.pegar())

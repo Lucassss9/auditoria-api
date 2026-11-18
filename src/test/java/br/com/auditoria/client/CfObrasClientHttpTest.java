@@ -15,7 +15,6 @@ public class CfObrasClientHttpTest {
         CfObrasClientHttp clientHttp = new CfObrasClientHttp(System.getenv("CF_URL"), cfAutenticacao);
 
         EstoqueCfDto busca = clientHttp.buscarEstoque("64091f67b46d603d53838e0e",  15, 0);
-        System.out.println(busca.data().results());
 
         assertNotNull(busca, "Nenhum estoque encontrado");
     }
