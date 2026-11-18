@@ -2,8 +2,7 @@ package br.com.auditoria.service;
 
 import br.com.auditoria.client.CfObrasClient;
 import br.com.auditoria.client.EstoqueMapper;
-import br.com.auditoria.dto.auditoria.AuditoriaRequestDto;
-import br.com.auditoria.dto.auditoria.AuditoriaResponseDto;
+import br.com.auditoria.dto.auditoria.*;
 import br.com.auditoria.dto.cfobras.EstoqueCfDto;
 import br.com.auditoria.dto.cfobras.LinhaEstoqueCfDto;
 import br.com.auditoria.dto.estoque.InsumoEstoqueDto;
@@ -21,6 +20,8 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
+import java.util.Spliterator;
 
 @Service
 @RequiredArgsConstructor
@@ -44,12 +45,47 @@ public class AuditoriaService {
         LocalDateTime referenciaEm = LocalDateTime.now();
         List<InsumoEstoqueDto> daObra = lerEstoqueDaObra(obra, requestDto.obraId());
 
-        Auditoria salva = auditoriaRepository.save(montarAuditoria(obra, referenciaEm));
+        Auditoria salva = auditoriaRepository.save(montarAuditoria(obra, requestDto, referenciaEm));
         List<ItemAuditoria> itens = montarItens(daObra, salva);
 
         itemAuditoriaRepository.saveAll(itens);
 
         return paraDto(salva, itens.size());
+    }
+
+    @Transactional(readOnly = true)
+    public AuditoriaDetalheDto buscarPorId(Long id) {
+        Auditoria auditoria = auditoriaRepository.findById(id).orElse(null);
+
+        if (auditoria == null) {
+            return null;
+        }
+
+        return paraDetalhe(auditoria, itemAuditoriaRepository.findByAuditoriaId(id));
+    }
+
+    private AuditoriaDetalheDto paraDetalhe(Auditoria auditoria, List<ItemAuditoria> itens) {
+        List<ItemAuditoriaDto> itensDto = itens.stream().map(this::paraItemDto).toList();
+
+        ReferenciaEstoqueDto referencia =
+                new ReferenciaEstoqueDto("CF Obras", auditoria.getReferenciaEm(), itensDto.size());
+
+        return new AuditoriaDetalheDto(String.valueOf(auditoria.getId()), auditoria.getObraId(),
+                auditoria.getObraNome(), auditoria.getFilialNome(), auditoria.getResponsavel(),
+                auditoria.getSituacaoAuditoria(), auditoria.getCriadaEm(), auditoria.getConcluidaEm(),
+                referencia, itensDto, List.of(), null);
+    }
+
+    private ItemAuditoriaDto paraItemDto(ItemAuditoria item) {
+        return new ItemAuditoriaDto(String.valueOf(item.getId()), item.getCodigo(), item.getDescricao(),
+                "", item.getUnidade(), item.getQuantidadeCongelada(), item.getValorUnitario(),
+                null, item.getQuantidadeContada(), paraSituacaoDoFront(item.getSituacaoItem()),
+                item.getMotivo(), null, item.getObservacao() == null ? "" : item.getObservacao(),
+                List.of());
+    }
+
+    private String paraSituacaoDoFront(SituacaoItem situacao) {
+        return situacao == SituacaoItem.CONTADO ? "CONFERIDO" : "NAO_CONFERIDO";
     }
 
     private List<InsumoEstoqueDto> lerEstoqueDaObra(ObraDto obra, String obraId) {
@@ -80,7 +116,7 @@ public class AuditoriaService {
                 .toList();
     }
 
-    private Auditoria montarAuditoria(ObraDto obra, LocalDateTime referenciaEm) {
+    private Auditoria montarAuditoria(ObraDto obra, AuditoriaRequestDto requestDto, LocalDateTime referenciaEm) {
         Auditoria auditoria = new Auditoria();
 
         auditoria.setObraId(obra.id());
@@ -89,6 +125,8 @@ public class AuditoriaService {
         auditoria.setFilialId(obra.filialId());
         auditoria.setSituacaoAuditoria(SituacaoAuditoria.EM_ANDAMENTO);
         auditoria.setCriadaEm(LocalDateTime.now());
+        auditoria.setFilialNome(obra.filial() == null ? null : obra.filial().nome());
+        auditoria.setResponsavel(requestDto.responsavel());
         auditoria.setReferenciaEm(referenciaEm);
 
         return auditoria;

@@ -1,16 +1,14 @@
 package br.com.auditoria.controller;
 
+import br.com.auditoria.dto.auditoria.AuditoriaDetalheDto;
 import br.com.auditoria.dto.auditoria.AuditoriaRequestDto;
 import br.com.auditoria.dto.auditoria.AuditoriaResponseDto;
 import br.com.auditoria.service.AuditoriaService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.ResponseStatus;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api")
@@ -23,5 +21,12 @@ public class AuditoriaController {
     @ResponseStatus(HttpStatus.CREATED)
     public AuditoriaResponseDto criar(@Valid @RequestBody AuditoriaRequestDto requestDto) {
         return auditoriaService.criar(requestDto);
+    }
+
+    @GetMapping("/auditorias/{id}")
+    public ResponseEntity<AuditoriaDetalheDto> buscarPorId(@PathVariable Long id) {
+        AuditoriaDetalheDto auditoria = auditoriaService.buscarPorId(id);
+
+        return auditoria == null ? ResponseEntity.notFound().build() : ResponseEntity.ok(auditoria);
     }
 }

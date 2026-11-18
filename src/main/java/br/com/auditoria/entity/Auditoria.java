@@ -45,4 +45,9 @@ public class Auditoria {
     private LocalDateTime referenciaEm;
 
     private LocalDateTime concluidaEm;
+
+    @Column(nullable = false)
+    private String responsavel;
+
+    private String filialNome;
 }
