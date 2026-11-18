@@ -6,6 +6,7 @@ import br.com.auditoria.entity.Responsavel;
 import br.com.auditoria.repository.ResponsavelRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -15,14 +16,17 @@ public class ResponsavelService {
 
     private final ResponsavelRepository responsavelRepository;
 
+    @Transactional(readOnly = true)
     public List<ResponsavelResponseDto> listarTodos() {
         return responsavelRepository.findAll().stream().map(this::paraDto).toList();
     }
 
+    @Transactional(readOnly = true)
     public List<ResponsavelResponseDto> listarPorObra(String obraId) {
         return responsavelRepository.findByObraId(obraId).stream().map(this::paraDto).toList();
     }
 
+    @Transactional
     public ResponsavelResponseDto criarResponsavel(ResponsavelRequestDto responsavelRequestDto) {
         Responsavel responsavel = new Responsavel();
         preencher(responsavelRequestDto, responsavel);
@@ -31,6 +35,7 @@ public class ResponsavelService {
         return paraDto(salvo);
     }
 
+    @Transactional
     public ResponsavelResponseDto atualizarResponsavel(ResponsavelRequestDto responsavelRequestDto, Long id) {
         Responsavel responsavel = responsavelRepository.findById(id).orElseThrow();
         preencher(responsavelRequestDto, responsavel);
@@ -39,6 +44,7 @@ public class ResponsavelService {
         return paraDto(salvo);
     }
 
+    @Transactional
     public void deletarResponsavel(Long id) {
         responsavelRepository.deleteById(id);
     }
