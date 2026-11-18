@@ -26,7 +26,7 @@ public class CargaInicial implements CommandLineRunner {
     @Override
     public void run(String... args) throws Exception {
         if (usuarioRepository.findByEmail(email).isEmpty()) {
-            usuarioRepository.save(new Usuario(null,"nome", email, encoder.encode(senha), "Teste"));
+            usuarioRepository.save(new Usuario(null,"Lucas Gabriel", email, encoder.encode(senha), "Adm"));
             System.out.println("Usuario adicionado com sucesso!");
         }
     }
