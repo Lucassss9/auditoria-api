@@ -1,12 +1,13 @@
 package br.com.auditoria.dto.auditoria;
 
-import java.math.BigDecimal;
-import java.util.List;
+import br.com.auditoria.enums.MotivoNaoContagem;
+import br.com.auditoria.enums.SituacaoItem;
 
-public record ItemAuditoriaDto(String id, String codigo, String descricao, String categoria,
+import java.math.BigDecimal;
+
+public record ItemAuditoriaDto(String id, String codigo, String descricao,
                                String unidade, BigDecimal quantidadeSistema,
                                BigDecimal valorUnitarioReferencia, String lista,
-                               BigDecimal quantidadeReal, String situacao,
-                               String motivoNaoContagem, String local, String observacao,
-                               List<Object> evidencias) {
+                               BigDecimal quantidadeReal, SituacaoItem situacao,
+                               MotivoNaoContagem motivoNaoContagem, String local, String observacao) {
 }

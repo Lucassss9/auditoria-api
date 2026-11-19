@@ -81,15 +81,11 @@ public class AuditoriaService {
     }
 
     private ItemAuditoriaDto paraItemDto(ItemAuditoria item) {
-        return new ItemAuditoriaDto(String.valueOf(item.getId()), item.getCodigo(), item.getDescricao(),
-                "", item.getUnidade(), item.getQuantidadeCongelada(), item.getValorUnitario(),
-                null, item.getQuantidadeContada(), paraSituacaoDoFront(item.getSituacaoItem()),
-                item.getMotivo(), null, item.getObservacao() == null ? "" : item.getObservacao(),
-                List.of());
-    }
-
-    private String paraSituacaoDoFront(SituacaoItem situacao) {
-        return situacao == SituacaoItem.CONTADO ? "CONFERIDO" : "NAO_CONFERIDO";
+        return new ItemAuditoriaDto(String.valueOf(item.getId()), item.getCodigo(),
+                item.getDescricao(), item.getUnidade(), item.getQuantidadeCongelada(),
+                item.getValorUnitario(), item.getLista(), item.getQuantidadeContada(),
+                item.getSituacaoItem(), item.getMotivo(), item.getLocal(),
+                item.getObservacao() == null ? "" : item.getObservacao());
     }
 
     private List<InsumoEstoqueDto> lerEstoqueDaObra(ObraDto obra, String obraId) {
@@ -149,7 +145,7 @@ public class AuditoriaService {
             item.setUnidade(insumo.unidade());
             item.setQuantidadeCongelada(insumo.quantidade());
             item.setValorUnitario(insumo.valorUnitario());
-            item.setSituacaoItem(SituacaoItem.NAO_CONTADO);
+            item.setSituacaoItem(SituacaoItem.NAO_CONFERIDO);
 
             itens.add(item);
         }

@@ -1,5 +1,6 @@
 package br.com.auditoria.entity;
 
+import br.com.auditoria.enums.MotivoNaoContagem;
 import br.com.auditoria.enums.SituacaoItem;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -43,6 +44,8 @@ public class ItemAuditoria {
     @Column(precision = 15, scale = 2)
     private BigDecimal valorUnitario;
 
+    private String lista;
+
     @Column(precision = 15, scale = 3)
     private BigDecimal quantidadeContada;
 
@@ -50,8 +53,11 @@ public class ItemAuditoria {
     @Enumerated(EnumType.STRING)
     private SituacaoItem situacaoItem;
 
-    private String motivo;
+    @Enumerated(EnumType.STRING)
+    private MotivoNaoContagem motivo;
+
+    @Column(name = "local_item")
+    private String local;
 
     private String observacao;
-
 }
