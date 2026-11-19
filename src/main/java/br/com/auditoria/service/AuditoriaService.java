@@ -18,8 +18,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -33,22 +33,33 @@ public class AuditoriaService {
     private final ItemAuditoriaRepository itemAuditoriaRepository;
 
     @Transactional
-    public AuditoriaResponseDto criar(AuditoriaRequestDto requestDto) {
+    public AuditoriaDetalheDto criar(AuditoriaRequestDto requestDto) {
         ObraDto obra = catalogo.buscarPorId(requestDto.obraId());
 
         if (obra == null) {
             throw new IllegalArgumentException("Obra nao encontrada: " + requestDto.obraId());
         }
 
+        Set<String> escolhidos = requestDto.insumos().stream().map(InsumoEscolhidoDto::insumoId)
+                .collect(Collectors.toSet());
+
+        Map<String, String> listas = new HashMap<>();
+
+        for (InsumoEscolhidoDto escolhido : requestDto.insumos()) {
+            listas.put(escolhido.insumoId(), escolhido.lista());
+        }
+
         LocalDateTime referenciaEm = LocalDateTime.now();
         List<InsumoEstoqueDto> daObra = lerEstoqueDaObra(obra, requestDto.obraId());
 
+        daObra = daObra.stream().filter(insumo -> escolhidos.contains(insumo.id())).toList();
+
         Auditoria salva = auditoriaRepository.save(montarAuditoria(obra, requestDto, referenciaEm));
-        List<ItemAuditoria> itens = montarItens(daObra, salva);
+        List<ItemAuditoria> itens = montarItens(daObra, salva, listas);
 
         itemAuditoriaRepository.saveAll(itens);
 
-        return paraDto(salva, itens.size());
+        return paraDetalhe(salva, itens);
     }
 
     @Transactional(readOnly = true)
@@ -132,7 +143,8 @@ public class AuditoriaService {
         return auditoria;
     }
 
-    private List<ItemAuditoria> montarItens(List<InsumoEstoqueDto> insumos, Auditoria auditoria) {
+    private List<ItemAuditoria> montarItens(List<InsumoEstoqueDto> insumos, Auditoria auditoria,
+                                            Map<String, String> listas) {
         List<ItemAuditoria> itens = new ArrayList<>();
 
         for (InsumoEstoqueDto insumo : insumos) {
@@ -145,17 +157,11 @@ public class AuditoriaService {
             item.setUnidade(insumo.unidade());
             item.setQuantidadeCongelada(insumo.quantidade());
             item.setValorUnitario(insumo.valorUnitario());
+            item.setLista(listas.get(insumo.id()));
             item.setSituacaoItem(SituacaoItem.NAO_CONFERIDO);
 
             itens.add(item);
         }
-
         return itens;
-    }
-
-    private AuditoriaResponseDto paraDto(Auditoria auditoria, int totalDeItens) {
-        return new AuditoriaResponseDto(auditoria.getId(), auditoria.getObraId(), auditoria.getObraNome(),
-                auditoria.getSegmento(), auditoria.getSituacaoAuditoria(), auditoria.getCriadaEm(),
-                auditoria.getReferenciaEm(), totalDeItens);
     }
 }

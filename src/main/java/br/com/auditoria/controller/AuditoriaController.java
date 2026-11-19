@@ -2,7 +2,6 @@ package br.com.auditoria.controller;
 
 import br.com.auditoria.dto.auditoria.AuditoriaDetalheDto;
 import br.com.auditoria.dto.auditoria.AuditoriaRequestDto;
-import br.com.auditoria.dto.auditoria.AuditoriaResponseDto;
 import br.com.auditoria.service.AuditoriaService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -21,7 +20,7 @@ public class AuditoriaController {
 
     @PostMapping("/auditorias")
     @ResponseStatus(HttpStatus.CREATED)
-    public AuditoriaResponseDto criar(@Valid @RequestBody AuditoriaRequestDto requestDto) {
+    public AuditoriaDetalheDto criar(@Valid @RequestBody AuditoriaRequestDto requestDto) {
         return auditoriaService.criar(requestDto);
     }
 
