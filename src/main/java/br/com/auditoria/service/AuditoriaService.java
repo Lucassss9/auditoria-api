@@ -1,10 +1,7 @@
 package br.com.auditoria.service;
 
 import br.com.auditoria.client.CfObrasClient;
-import br.com.auditoria.client.EstoqueMapper;
 import br.com.auditoria.dto.auditoria.*;
-import br.com.auditoria.dto.cfobras.EstoqueCfDto;
-import br.com.auditoria.dto.cfobras.LinhaEstoqueCfDto;
 import br.com.auditoria.dto.estoque.InsumoEstoqueDto;
 import br.com.auditoria.dto.obra.ObraDto;
 import br.com.auditoria.entity.Auditoria;
@@ -25,10 +22,8 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class AuditoriaService {
 
-    private static final int POR_PAGINA = 100;
-
+    private final EstoqueService estoqueService;
     private final CatalogoDeObras catalogo;
-    private final CfObrasClient client;
     private final AuditoriaRepository auditoriaRepository;
     private final ItemAuditoriaRepository itemAuditoriaRepository;
 
@@ -50,7 +45,7 @@ public class AuditoriaService {
         }
 
         LocalDateTime referenciaEm = LocalDateTime.now();
-        List<InsumoEstoqueDto> daObra = lerEstoqueDaObra(obra, requestDto.obraId());
+        List<InsumoEstoqueDto> daObra = estoqueService.lerEstoqueDaObra(obra, requestDto.obraId());
 
         daObra = daObra.stream().filter(insumo -> escolhidos.contains(insumo.id())).toList();
 
@@ -99,33 +94,6 @@ public class AuditoriaService {
                 item.getObservacao() == null ? "" : item.getObservacao());
     }
 
-    private List<InsumoEstoqueDto> lerEstoqueDaObra(ObraDto obra, String obraId) {
-        List<InsumoEstoqueDto> itens = new ArrayList<>();
-        int pulo = 0;
-
-        while (true) {
-            EstoqueCfDto pagina = client.buscarEstoque(obra.filialId(), POR_PAGINA, pulo);
-            List<LinhaEstoqueCfDto> linhas = pagina.data().results();
-
-            if (linhas.isEmpty()) {
-                break;
-            }
-
-            for (LinhaEstoqueCfDto linha : linhas) {
-                itens.add(EstoqueMapper.mapear(linha));
-            }
-
-            pulo += linhas.size();
-
-            if (itens.size() >= pagina.data().count()) {
-                break;
-            }
-        }
-
-        return itens.stream()
-                .filter(item -> item.obraId().equals(obraId))
-                .toList();
-    }
 
     private Auditoria montarAuditoria(ObraDto obra, AuditoriaRequestDto requestDto, LocalDateTime referenciaEm) {
         Auditoria auditoria = new Auditoria();
