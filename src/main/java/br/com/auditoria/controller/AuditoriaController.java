@@ -2,6 +2,7 @@ package br.com.auditoria.controller;
 
 import br.com.auditoria.dto.auditoria.AuditoriaDetalheDto;
 import br.com.auditoria.dto.auditoria.AuditoriaRequestDto;
+import br.com.auditoria.dto.auditoria.ComunicadoRequestDto;
 import br.com.auditoria.dto.auditoria.ContagemItemDto;
 import br.com.auditoria.dto.auditoria.ItemForaEstoqueRequestDto;
 import br.com.auditoria.service.AuditoriaService;
@@ -63,6 +64,13 @@ public class AuditoriaController {
     public AuditoriaDetalheDto removerForaDoEstoque(@PathVariable Long auditoriaId,
                                                     @PathVariable Long itemId) {
         return auditoriaService.removerForaDoEstoque(auditoriaId, itemId);
+    }
+
+    @PutMapping("/auditorias/{auditoriaId}/comunicado")
+    public AuditoriaDetalheDto salvarComunicado(
+            @PathVariable Long auditoriaId,
+            @Valid @RequestBody ComunicadoRequestDto requestDto) {
+        return auditoriaService.salvarComunicado(auditoriaId, requestDto);
     }
 
     @PostMapping("/auditorias/{id}/concluir")

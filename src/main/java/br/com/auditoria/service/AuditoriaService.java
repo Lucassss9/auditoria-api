@@ -5,12 +5,15 @@ import br.com.auditoria.dto.estoque.InsumoEstoqueDto;
 import br.com.auditoria.dto.obra.ObraDto;
 import br.com.auditoria.entity.Auditoria;
 import br.com.auditoria.entity.ItemAuditoria;
+import br.com.auditoria.entity.Comunicado;
 import br.com.auditoria.entity.ItemForaEstoque;
 import br.com.auditoria.enums.SituacaoAuditoria;
 import br.com.auditoria.enums.SituacaoItem;
 import br.com.auditoria.exception.ConflitoException;
 import br.com.auditoria.repository.AuditoriaRepository;
+import br.com.auditoria.repository.ResponsavelRepository;
 import br.com.auditoria.repository.ItemAuditoriaRepository;
+import br.com.auditoria.repository.ComunicadoRepository;
 import br.com.auditoria.repository.ItemForaEstoqueRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -29,6 +32,8 @@ public class AuditoriaService {
     private final AuditoriaRepository auditoriaRepository;
     private final ItemAuditoriaRepository itemAuditoriaRepository;
     private final ItemForaEstoqueRepository itemForaEstoqueRepository;
+    private final ComunicadoRepository comunicadoRepository;
+    private final ResponsavelRepository responsavelRepository;
 
     @Transactional
     public AuditoriaDetalheDto criar(AuditoriaRequestDto requestDto) {
@@ -192,6 +197,49 @@ public class AuditoriaService {
         return texto.trim();
     }
 
+    @Transactional
+    public AuditoriaDetalheDto salvarComunicado(Long auditoriaId, ComunicadoRequestDto requestDto) {
+        Auditoria auditoria = exigirAuditoria(auditoriaId);
+        exigirNaoCancelada(auditoria);
+        exigirDestinatariosConhecidos(requestDto.destinatariosIds());
+
+        Comunicado comunicado = comunicadoRepository.findByAuditoriaId(auditoriaId)
+                .orElseGet(Comunicado::new);
+        comunicado.setAuditoria(auditoria);
+        comunicado.getDestinatariosIds().clear();
+        comunicado.getDestinatariosIds().addAll(requestDto.destinatariosIds());
+        comunicado.setPrazo(requestDto.prazo());
+        comunicado.setAssunto(requestDto.assunto().trim());
+        comunicado.setMensagem(requestDto.mensagem());
+        comunicado.setGeradoEm(LocalDateTime.now());
+        comunicadoRepository.save(comunicado);
+
+        return paraDetalhe(auditoria, itemAuditoriaRepository.findByAuditoriaId(auditoriaId));
+    }
+
+    private void exigirNaoCancelada(Auditoria auditoria) {
+        if (auditoria.getSituacaoAuditoria() == SituacaoAuditoria.CANCELADA) {
+            throw new ConflitoException(
+                    "A auditoria " + auditoria.getId() + " foi cancelada.");
+        }
+    }
+
+    private void exigirDestinatariosConhecidos(List<String> ids) {
+        for (String id : ids) {
+            long numero;
+
+            try {
+                numero = Long.parseLong(id.trim());
+            } catch (NumberFormatException naoEhNumero) {
+                throw new IllegalArgumentException("Destinatario invalido: " + id);
+            }
+
+            if (!responsavelRepository.existsById(numero)) {
+                throw new IllegalArgumentException("Destinatario nao cadastrado: " + id);
+            }
+        }
+    }
+
     private Auditoria exigirAuditoria(Long id) {
         return auditoriaRepository.findById(id)
                 .orElseThrow(() -> new NoSuchElementException("Auditoria nao encontrada: " + id));
@@ -251,9 +299,18 @@ public class AuditoriaService {
                 new ReferenciaEstoqueDto("CF Obras", auditoria.getReferenciaEm(), itensDto.size());
 
         return new AuditoriaDetalheDto(String.valueOf(auditoria.getId()), auditoria.getObraId(),
-                auditoria.getObraNome(), auditoria.getFilialNome(), auditoria.getResponsavel(),
+                auditoria.getObraNome(), auditoria.getSegmento(), auditoria.getFilialNome(),
+                auditoria.getResponsavel(),
                 auditoria.getSituacaoAuditoria(), auditoria.getCriadaEm(), auditoria.getConcluidaEm(),
-                referencia, itensDto, foraDoEstoqueDe(auditoria), null);
+                referencia, itensDto, foraDoEstoqueDe(auditoria), comunicadoDe(auditoria));
+    }
+
+    private ComunicadoDto comunicadoDe(Auditoria auditoria) {
+        return comunicadoRepository.findByAuditoriaId(auditoria.getId())
+                .map(comunicado -> new ComunicadoDto(List.copyOf(comunicado.getDestinatariosIds()),
+                        comunicado.getPrazo(), comunicado.getAssunto(), comunicado.getMensagem(),
+                        comunicado.getGeradoEm()))
+                .orElse(null);
     }
 
     private List<ItemForaEstoqueDto> foraDoEstoqueDe(Auditoria auditoria) {
