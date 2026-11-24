@@ -3,6 +3,7 @@ package br.com.auditoria.service;
 import br.com.auditoria.dto.responsavel.ResponsavelRequestDto;
 import br.com.auditoria.dto.responsavel.ResponsavelResponseDto;
 import br.com.auditoria.entity.Responsavel;
+import br.com.auditoria.exception.ConflitoException;
 import br.com.auditoria.repository.ResponsavelRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -28,6 +29,8 @@ public class ResponsavelService {
 
     @Transactional
     public ResponsavelResponseDto criarResponsavel(ResponsavelRequestDto responsavelRequestDto) {
+        exigirParInedito(responsavelRequestDto, null);
+
         Responsavel responsavel = new Responsavel();
         preencher(responsavelRequestDto, responsavel);
         Responsavel salvo = responsavelRepository.save(responsavel);
@@ -38,6 +41,7 @@ public class ResponsavelService {
     @Transactional
     public ResponsavelResponseDto atualizarResponsavel(ResponsavelRequestDto responsavelRequestDto, Long id) {
         Responsavel responsavel = responsavelRepository.findById(id).orElseThrow();
+        exigirParInedito(responsavelRequestDto, id);
         preencher(responsavelRequestDto, responsavel);
         Responsavel salvo = responsavelRepository.save(responsavel);
 
@@ -47,6 +51,16 @@ public class ResponsavelService {
     @Transactional
     public void deletarResponsavel(Long id) {
         responsavelRepository.deleteById(id);
+    }
+
+    private void exigirParInedito(ResponsavelRequestDto requestDto, Long idEmEdicao) {
+        responsavelRepository
+                .findByEmailIgnoreCaseAndObraId(requestDto.email(), requestDto.obraId())
+                .filter(existente -> !existente.getId().equals(idEmEdicao))
+                .ifPresent(existente -> {
+                    throw new ConflitoException(
+                            "Esta pessoa ja esta cadastrada nesta obra: " + requestDto.email());
+                });
     }
 
     private ResponsavelResponseDto paraDto(Responsavel responsavel) {

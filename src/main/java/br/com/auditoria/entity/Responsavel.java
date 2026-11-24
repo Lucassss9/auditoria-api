@@ -8,6 +8,8 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Entity
+@Table(uniqueConstraints = @UniqueConstraint(name = "uk_responsavel_email_obra",
+        columnNames = {"email", "obra_id"}))
 @Getter
 @Setter
 @NoArgsConstructor
@@ -28,7 +30,7 @@ public class Responsavel {
     @Enumerated(EnumType.STRING)
     private FuncaoObra funcaoObra;
 
-    @Column(nullable = false, unique = true)
+    @Column(nullable = false)
     private String email;
 
     @Column(nullable = false)
