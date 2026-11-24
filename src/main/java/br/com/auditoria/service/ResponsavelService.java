@@ -9,7 +9,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
@@ -29,7 +31,7 @@ public class ResponsavelService {
 
     @Transactional
     public ResponsavelResponseDto criarResponsavel(ResponsavelRequestDto responsavelRequestDto) {
-        exigirParInedito(responsavelRequestDto, null);
+        exigirEmailInedito(responsavelRequestDto, null);
 
         Responsavel responsavel = new Responsavel();
         preencher(responsavelRequestDto, responsavel);
@@ -41,7 +43,7 @@ public class ResponsavelService {
     @Transactional
     public ResponsavelResponseDto atualizarResponsavel(ResponsavelRequestDto responsavelRequestDto, Long id) {
         Responsavel responsavel = responsavelRepository.findById(id).orElseThrow();
-        exigirParInedito(responsavelRequestDto, id);
+        exigirEmailInedito(responsavelRequestDto, id);
         preencher(responsavelRequestDto, responsavel);
         Responsavel salvo = responsavelRepository.save(responsavel);
 
@@ -53,23 +55,27 @@ public class ResponsavelService {
         responsavelRepository.deleteById(id);
     }
 
-    private void exigirParInedito(ResponsavelRequestDto requestDto, Long idEmEdicao) {
+    private void exigirEmailInedito(ResponsavelRequestDto requestDto, Long idEmEdicao) {
         responsavelRepository
-                .findByEmailIgnoreCaseAndObraId(requestDto.email(), requestDto.obraId())
+                .findByEmailIgnoreCase(requestDto.email())
                 .filter(existente -> !existente.getId().equals(idEmEdicao))
                 .ifPresent(existente -> {
                     throw new ConflitoException(
-                            "Esta pessoa ja esta cadastrada nesta obra: " + requestDto.email());
+                            "Esta pessoa ja esta cadastrada: " + requestDto.email());
                 });
     }
 
     private ResponsavelResponseDto paraDto(Responsavel responsavel) {
-        return new ResponsavelResponseDto(responsavel.getId(), responsavel.getObraId(), responsavel.getNome(),
-                responsavel.getFuncaoObra(), responsavel.getEmail(), responsavel.isAtivo(), responsavel.isReceberEmail());
+        return new ResponsavelResponseDto(responsavel.getId(), List.copyOf(responsavel.getObraIds()),
+                responsavel.getNome(), responsavel.getFuncaoObra(), responsavel.getEmail(),
+                responsavel.isAtivo(), responsavel.isReceberEmail());
     }
 
     private void preencher(ResponsavelRequestDto responsavelRequestDto, Responsavel responsavel) {
-        responsavel.setObraId(responsavelRequestDto.obraId());
+        Set<String> obras = new LinkedHashSet<>(responsavelRequestDto.obraIds());
+
+        responsavel.getObraIds().clear();
+        responsavel.getObraIds().addAll(obras);
         responsavel.setNome(responsavelRequestDto.nome());
         responsavel.setFuncaoObra(responsavelRequestDto.funcao());
         responsavel.setEmail(responsavelRequestDto.email());

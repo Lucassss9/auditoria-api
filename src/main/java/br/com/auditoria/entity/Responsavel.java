@@ -7,9 +7,12 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.util.LinkedHashSet;
+import java.util.Set;
+
 @Entity
-@Table(uniqueConstraints = @UniqueConstraint(name = "uk_responsavel_email_obra",
-        columnNames = {"email", "obra_id"}))
+@Table(uniqueConstraints = @UniqueConstraint(name = "uk_responsavel_email",
+        columnNames = "email"))
 @Getter
 @Setter
 @NoArgsConstructor
@@ -20,8 +23,11 @@ public class Responsavel {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false)
-    private String obraId;
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(name = "responsavel_obra",
+            joinColumns = @JoinColumn(name = "responsavel_id"))
+    @Column(name = "obra_id", nullable = false)
+    private Set<String> obraIds = new LinkedHashSet<>();
 
     @Column(nullable = false)
     private String nome;
