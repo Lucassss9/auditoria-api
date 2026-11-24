@@ -13,6 +13,7 @@ import java.text.Normalizer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.NoSuchElementException;
 
 @Service
 @RequiredArgsConstructor
@@ -50,6 +51,10 @@ public class EstoqueService {
 
     public List<InsumoEstoqueDto> buscar(String obraId, String termo) {
         ObraDto obra = catalogo.buscarPorId(obraId);
+
+        if (obra == null) {
+            throw new NoSuchElementException("Obra nao encontrada: " + obraId);
+        }
 
         List<InsumoEstoqueDto> daObra = lerEstoqueDaObra(obra, obraId);
         String procurado = semAcento(termo);
