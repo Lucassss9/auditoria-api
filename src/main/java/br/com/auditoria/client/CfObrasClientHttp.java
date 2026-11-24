@@ -25,18 +25,18 @@ public class CfObrasClientHttp implements CfObrasClient {
         this.cfAutenticacao = cfAutenticacao;
     }
 
-    public EstoqueCfDto buscarEstoque(String filialId, int limite, int pulo) {
+    public EstoqueCfDto buscarEstoque(String filialId, int limite, int pagina) {
         try {
-            return getEstoqueCfDto(filialId, limite, pulo);
+            return getEstoqueCfDto(filialId, limite, pagina);
         } catch (HttpClientErrorException.Unauthorized tokenVencido) {
             cfAutenticacao.renovar();
-            return getEstoqueCfDto(filialId, limite, pulo);
+            return getEstoqueCfDto(filialId, limite, pagina);
         }
     }
 
-    private @Nullable EstoqueCfDto getEstoqueCfDto(String filialId, int limite, int pulo) {
+    private @Nullable EstoqueCfDto getEstoqueCfDto(String filialId, int limite, int pagina) {
         return busca.get()
-                .uri("/estoque/register-filter/?limit={l}&skip={p}&filial={f}", limite, pulo, filialId)
+                .uri("/estoque/register-filter/?limit={l}&skip={p}&filial={f}", limite, pagina, filialId)
                 .header("Authorization", cfAutenticacao.pegar())
                 .retrieve()
                 .body(EstoqueCfDto.class);

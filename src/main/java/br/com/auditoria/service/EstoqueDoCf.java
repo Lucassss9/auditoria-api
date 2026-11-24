@@ -20,6 +20,8 @@ public class EstoqueDoCf {
 
     private static final int POR_PAGINA = 100;
 
+    private static final int MAXIMO_DE_PAGINAS = 200;
+
     private final CfObrasClient client;
 
     @Cacheable(CACHE)
@@ -29,11 +31,10 @@ public class EstoqueDoCf {
 
     public List<InsumoEstoqueDto> daFilial(String filialId) {
         List<InsumoEstoqueDto> itens = new ArrayList<>();
-        int pulo = 0;
 
-        while (true) {
-            EstoqueCfDto pagina = client.buscarEstoque(filialId, POR_PAGINA, pulo);
-            List<LinhaEstoqueCfDto> linhas = pagina.data().results();
+        for (int pagina = 0; pagina < MAXIMO_DE_PAGINAS; pagina++) {
+            List<LinhaEstoqueCfDto> linhas = client.buscarEstoque(filialId, POR_PAGINA, pagina)
+                    .data().results();
 
             if (linhas.isEmpty()) {
                 break;
@@ -43,9 +44,7 @@ public class EstoqueDoCf {
                 itens.add(EstoqueMapper.mapear(linha));
             }
 
-            pulo += linhas.size();
-
-            if (itens.size() >= pagina.data().count()) {
+            if (linhas.size() < POR_PAGINA) {
                 break;
             }
         }
