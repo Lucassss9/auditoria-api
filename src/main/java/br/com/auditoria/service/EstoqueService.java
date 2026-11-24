@@ -1,16 +1,11 @@
 package br.com.auditoria.service;
 
-import br.com.auditoria.client.CfObrasClient;
-import br.com.auditoria.client.EstoqueMapper;
-import br.com.auditoria.dto.cfobras.EstoqueCfDto;
-import br.com.auditoria.dto.cfobras.LinhaEstoqueCfDto;
 import br.com.auditoria.dto.estoque.InsumoEstoqueDto;
 import br.com.auditoria.dto.obra.ObraDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.text.Normalizer;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.NoSuchElementException;
@@ -19,35 +14,8 @@ import java.util.NoSuchElementException;
 @RequiredArgsConstructor
 public class EstoqueService {
 
-    private static final int POR_PAGINA = 100;
-
     private final CatalogoDeObras catalogo;
-    private final CfObrasClient client;
-
-    public List<InsumoEstoqueDto> lerEstoqueDaObra(ObraDto obra, String obraId) {
-        List<InsumoEstoqueDto> itens = new ArrayList<>();
-        int pulo = 0;
-
-        while (true) {
-            EstoqueCfDto pagina = client.buscarEstoque(obra.filialId(), POR_PAGINA, pulo);
-            List<LinhaEstoqueCfDto> linhas = pagina.data().results();
-
-            if (linhas.isEmpty()) {
-                break;
-            }
-
-            for (LinhaEstoqueCfDto linha : linhas) {
-                itens.add(EstoqueMapper.mapear(linha));
-            }
-
-            pulo += linhas.size();
-
-            if (itens.size() >= pagina.data().count()) {
-                break;
-            }
-        }
-        return itens.stream().filter(item -> item.obraId().equals(obraId)).toList();
-    }
+    private final EstoqueDoCf estoqueDoCf;
 
     public List<InsumoEstoqueDto> buscar(String obraId, String termo) {
         ObraDto obra = catalogo.buscarPorId(obraId);
@@ -56,7 +24,7 @@ public class EstoqueService {
             throw new NoSuchElementException("Obra nao encontrada: " + obraId);
         }
 
-        List<InsumoEstoqueDto> daObra = lerEstoqueDaObra(obra, obraId);
+        List<InsumoEstoqueDto> daObra = daObra(estoqueDoCf.daFilialEmCache(obra.filialId()), obraId);
         String procurado = semAcento(termo);
 
         if (procurado.isEmpty()) {
@@ -67,6 +35,14 @@ public class EstoqueService {
                 .filter(insumo -> semAcento(insumo.descricao()).contains(procurado)
                         || semAcento(insumo.codigo()).contains(procurado))
                 .toList();
+    }
+
+    public List<InsumoEstoqueDto> lerParaCongelar(ObraDto obra, String obraId) {
+        return daObra(estoqueDoCf.daFilial(obra.filialId()), obraId);
+    }
+
+    private static List<InsumoEstoqueDto> daObra(List<InsumoEstoqueDto> daFilial, String obraId) {
+        return daFilial.stream().filter(insumo -> insumo.obraId().equals(obraId)).toList();
     }
 
     private static String semAcento(String texto) {

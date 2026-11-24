@@ -45,7 +45,7 @@ public class AuditoriaService {
         }
 
         LocalDateTime referenciaEm = LocalDateTime.now();
-        List<InsumoEstoqueDto> daObra = estoqueService.lerEstoqueDaObra(obra, requestDto.obraId());
+        List<InsumoEstoqueDto> daObra = estoqueService.lerParaCongelar(obra, requestDto.obraId());
 
         daObra = daObra.stream().filter(insumo -> escolhidos.contains(insumo.id())).toList();
 
