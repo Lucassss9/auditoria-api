@@ -30,4 +30,16 @@ public class GlobalExceptionHandler {
 
         return new ErroDto("Dados inválidos.", null);
     }
+
+    @ExceptionHandler(IllegalArgumentException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ErroDto regraQuebrada(IllegalArgumentException ex) {
+        return new ErroDto(ex.getMessage(), null);
+    }
+
+    @ExceptionHandler(ConflitoException.class)
+    @ResponseStatus(HttpStatus.CONFLICT)
+    public ErroDto conflito(ConflitoException ex) {
+        return new ErroDto(ex.getMessage(), null);
+    }
 }

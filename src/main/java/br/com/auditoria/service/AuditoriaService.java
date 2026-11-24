@@ -1,6 +1,5 @@
 package br.com.auditoria.service;
 
-import br.com.auditoria.client.CfObrasClient;
 import br.com.auditoria.dto.auditoria.*;
 import br.com.auditoria.dto.estoque.InsumoEstoqueDto;
 import br.com.auditoria.dto.obra.ObraDto;
@@ -8,6 +7,7 @@ import br.com.auditoria.entity.Auditoria;
 import br.com.auditoria.entity.ItemAuditoria;
 import br.com.auditoria.enums.SituacaoAuditoria;
 import br.com.auditoria.enums.SituacaoItem;
+import br.com.auditoria.exception.ConflitoException;
 import br.com.auditoria.repository.AuditoriaRepository;
 import br.com.auditoria.repository.ItemAuditoriaRepository;
 import lombok.RequiredArgsConstructor;
@@ -72,6 +72,106 @@ public class AuditoriaService {
     public List<AuditoriaDetalheDto> listarAuditorias() {
        return auditoriaRepository.findAll().stream().map(auditoria -> paraDetalhe(auditoria,
                itemAuditoriaRepository.findByAuditoriaId(auditoria.getId()))).toList();
+    }
+
+    @Transactional
+    public AuditoriaDetalheDto contar(Long auditoriaId, Long itemId, ContagemItemDto contagem) {
+        Auditoria auditoria = exigirAuditoria(auditoriaId);
+        exigirEmAndamento(auditoria);
+
+        ItemAuditoria item = itemAuditoriaRepository.findById(itemId)
+                .orElseThrow(() -> new NoSuchElementException("Item nao encontrado: " + itemId));
+
+        if (!item.getAuditoria().getId().equals(auditoriaId)) {
+            throw new NoSuchElementException("Item nao encontrado: " + itemId);
+        }
+
+        validarContagem(contagem);
+
+        item.setQuantidadeContada(contagem.quantidadeReal());
+        item.setSituacaoItem(contagem.situacao());
+        item.setMotivo(contagem.motivoNaoContagem());
+        item.setLocal(contagem.local());
+        item.setObservacao(contagem.observacao());
+
+        itemAuditoriaRepository.save(item);
+
+        return paraDetalhe(auditoria, itemAuditoriaRepository.findByAuditoriaId(auditoriaId));
+    }
+
+    @Transactional
+    public AuditoriaDetalheDto concluir(Long id) {
+        Auditoria auditoria = exigirAuditoria(id);
+        exigirEmAndamento(auditoria);
+
+        auditoria.setSituacaoAuditoria(SituacaoAuditoria.CONCLUIDA);
+        auditoria.setConcluidaEm(LocalDateTime.now());
+        auditoriaRepository.save(auditoria);
+
+        return paraDetalhe(auditoria, itemAuditoriaRepository.findByAuditoriaId(id));
+    }
+
+    @Transactional
+    public AuditoriaDetalheDto cancelar(Long id) {
+        Auditoria auditoria = exigirAuditoria(id);
+        exigirEmAndamento(auditoria);
+
+        auditoria.setSituacaoAuditoria(SituacaoAuditoria.CANCELADA);
+        auditoriaRepository.save(auditoria);
+
+        return paraDetalhe(auditoria, itemAuditoriaRepository.findByAuditoriaId(id));
+    }
+
+    private Auditoria exigirAuditoria(Long id) {
+        return auditoriaRepository.findById(id)
+                .orElseThrow(() -> new NoSuchElementException("Auditoria nao encontrada: " + id));
+    }
+
+    private void exigirEmAndamento(Auditoria auditoria) {
+        if (auditoria.getSituacaoAuditoria() != SituacaoAuditoria.EM_ANDAMENTO) {
+            throw new ConflitoException(
+                    "A auditoria " + auditoria.getId() + " nao esta mais em andamento.");
+        }
+    }
+
+    private void validarContagem(ContagemItemDto contagem) {
+        if (contagem.situacao() == null) {
+            throw new IllegalArgumentException("A situacao do item e obrigatoria.");
+        }
+
+        if (contagem.quantidadeReal() != null && contagem.quantidadeReal().signum() < 0) {
+            throw new IllegalArgumentException("A quantidade contada nao pode ser negativa.");
+        }
+
+        switch (contagem.situacao()) {
+            case CONFERIDO -> {
+                if (contagem.quantidadeReal() == null) {
+                    throw new IllegalArgumentException(
+                            "Item conferido precisa da quantidade contada.");
+                }
+
+                if (contagem.motivoNaoContagem() != null) {
+                    throw new IllegalArgumentException(
+                            "Item conferido nao tem motivo de nao contagem.");
+                }
+            }
+            case NAO_CONTADO -> {
+                if (contagem.motivoNaoContagem() == null) {
+                    throw new IllegalArgumentException("Item nao contado precisa de um motivo.");
+                }
+
+                if (contagem.quantidadeReal() != null) {
+                    throw new IllegalArgumentException(
+                            "Item nao contado nao tem quantidade contada.");
+                }
+            }
+            case NAO_CONFERIDO -> {
+                if (contagem.quantidadeReal() != null || contagem.motivoNaoContagem() != null) {
+                    throw new IllegalArgumentException(
+                            "Item nao conferido nao tem quantidade nem motivo.");
+                }
+            }
+        }
     }
 
     private AuditoriaDetalheDto paraDetalhe(Auditoria auditoria, List<ItemAuditoria> itens) {

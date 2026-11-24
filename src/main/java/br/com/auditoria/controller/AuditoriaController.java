@@ -2,6 +2,7 @@ package br.com.auditoria.controller;
 
 import br.com.auditoria.dto.auditoria.AuditoriaDetalheDto;
 import br.com.auditoria.dto.auditoria.AuditoriaRequestDto;
+import br.com.auditoria.dto.auditoria.ContagemItemDto;
 import br.com.auditoria.service.AuditoriaService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -34,5 +35,21 @@ public class AuditoriaController {
     @GetMapping("/auditorias")
     public List<AuditoriaDetalheDto> buscarTodos() {
         return auditoriaService.listarAuditorias();
+    }
+
+    @PatchMapping("/auditorias/{auditoriaId}/itens/{itemId}")
+    public AuditoriaDetalheDto contar(@PathVariable Long auditoriaId, @PathVariable Long itemId,
+                                      @RequestBody ContagemItemDto contagem) {
+        return auditoriaService.contar(auditoriaId, itemId, contagem);
+    }
+
+    @PostMapping("/auditorias/{id}/concluir")
+    public AuditoriaDetalheDto concluir(@PathVariable Long id) {
+        return auditoriaService.concluir(id);
+    }
+
+    @PostMapping("/auditorias/{id}/cancelar")
+    public AuditoriaDetalheDto cancelar(@PathVariable Long id) {
+        return auditoriaService.cancelar(id);
     }
 }
