@@ -3,7 +3,7 @@ package br.com.auditoria.controller;
 import br.com.auditoria.dto.obra.FilialDto;
 import br.com.auditoria.dto.obra.ObraDto;
 import br.com.auditoria.enums.Situacao;
-import br.com.auditoria.service.CatalogoDeObras;
+import br.com.auditoria.service.ObraService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -17,15 +17,15 @@ import java.util.List;
 @RequestMapping("/api")
 public class ObraController {
 
-    private final CatalogoDeObras catalogo;
+    private final ObraService obraService;
 
-    public ObraController(CatalogoDeObras catalogo) {
-        this.catalogo = catalogo;
+    public ObraController(ObraService obraService) {
+        this.obraService = obraService;
     }
 
     @GetMapping("/obras")
     public List<ObraDto> listar(@RequestParam(required = false) Situacao situacao) {
-        List<ObraDto> obras = catalogo.listar();
+        List<ObraDto> obras = obraService.listar();
 
         if (situacao == null) {
             return obras;
@@ -36,13 +36,13 @@ public class ObraController {
 
     @GetMapping("/obras/{id}")
     public ResponseEntity<ObraDto> buscarPorId(@PathVariable String id) {
-        ObraDto obra = catalogo.buscarPorId(id);
+        ObraDto obra = obraService.buscarPorId(id);
 
         return obra == null ? ResponseEntity.notFound().build() : ResponseEntity.ok(obra);
     }
 
     @GetMapping("/filiais")
     public List<FilialDto> listarFiliais() {
-        return catalogo.listarFiliais();
+        return obraService.listarFiliais();
     }
 }
