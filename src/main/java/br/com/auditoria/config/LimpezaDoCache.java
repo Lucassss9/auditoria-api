@@ -14,11 +14,11 @@ import java.util.List;
 @RequiredArgsConstructor
 public class LimpezaDoCache {
 
-    private static final long CINCO_MINUTOS = 5 * 60 * 1000L;
+    private static final long MEIA_HORA = 30 * 60 * 1000L;
 
     private final CacheManager cacheManager;
 
-    @Scheduled(fixedDelay = CINCO_MINUTOS, initialDelay = CINCO_MINUTOS)
+    @Scheduled(fixedDelay = MEIA_HORA, initialDelay = MEIA_HORA)
     public void esquecerOQueVeioDoCf() {
         for (String nome : List.of(EstoqueDoCf.CACHE, ObrasDoCf.CACHE)) {
             Cache cache = cacheManager.getCache(nome);

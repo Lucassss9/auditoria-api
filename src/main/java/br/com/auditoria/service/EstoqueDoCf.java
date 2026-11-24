@@ -41,7 +41,9 @@ public class EstoqueDoCf {
             }
 
             for (LinhaEstoqueCfDto linha : linhas) {
-                itens.add(EstoqueMapper.mapear(linha));
+                if (EstoqueMapper.utilizavel(linha)) {
+                    itens.add(EstoqueMapper.mapear(linha));
+                }
             }
 
             if (linhas.size() < POR_PAGINA) {

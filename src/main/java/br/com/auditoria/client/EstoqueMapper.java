@@ -10,6 +10,16 @@ import java.util.Locale;
 
 public class EstoqueMapper {
 
+    public static boolean utilizavel(LinhaEstoqueCfDto linha) {
+        return linha != null
+                && linha.insumo() != null
+                && linha.insumo()._id() != null
+                && !linha.insumo()._id().isBlank()
+                && linha.obra() != null
+                && linha.obra()._id() != null
+                && linha.qtde() != null;
+    }
+
     public static InsumoEstoqueDto mapear(LinhaEstoqueCfDto linha) {
         return new InsumoEstoqueDto(linha.insumo()._id(), linha.insumo().codigo(), nomeCompleto(linha.insumo()),
                 linha.qtde().setScale(3, RoundingMode.HALF_UP), linha.insumo().unidade(), paraValor(linha.valor_unitario()), linha.obra()._id(), linha.obra().nome());
