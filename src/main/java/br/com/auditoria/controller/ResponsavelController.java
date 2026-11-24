@@ -2,7 +2,6 @@ package br.com.auditoria.controller;
 
 import br.com.auditoria.dto.responsavel.ResponsavelRequestDto;
 import br.com.auditoria.dto.responsavel.ResponsavelResponseDto;
-import br.com.auditoria.entity.Responsavel;
 import br.com.auditoria.service.ResponsavelService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
