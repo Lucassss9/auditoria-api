@@ -9,5 +9,5 @@ public record AuditoriaDetalheDto(String id, String obraId, String obraNome, Str
                                   String responsavel, SituacaoAuditoria status,
                                   LocalDateTime iniciadaEm, LocalDateTime concluidaEm,
                                   ReferenciaEstoqueDto referencia, List<ItemAuditoriaDto> itens,
-                                  List<Object> foraDoEstoque, Object comunicado) {
+                                  List<ItemForaEstoqueDto> foraDoEstoque, Object comunicado) {
 }

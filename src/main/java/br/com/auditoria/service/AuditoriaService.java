@@ -5,11 +5,13 @@ import br.com.auditoria.dto.estoque.InsumoEstoqueDto;
 import br.com.auditoria.dto.obra.ObraDto;
 import br.com.auditoria.entity.Auditoria;
 import br.com.auditoria.entity.ItemAuditoria;
+import br.com.auditoria.entity.ItemForaEstoque;
 import br.com.auditoria.enums.SituacaoAuditoria;
 import br.com.auditoria.enums.SituacaoItem;
 import br.com.auditoria.exception.ConflitoException;
 import br.com.auditoria.repository.AuditoriaRepository;
 import br.com.auditoria.repository.ItemAuditoriaRepository;
+import br.com.auditoria.repository.ItemForaEstoqueRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -26,6 +28,7 @@ public class AuditoriaService {
     private final CatalogoDeObras catalogo;
     private final AuditoriaRepository auditoriaRepository;
     private final ItemAuditoriaRepository itemAuditoriaRepository;
+    private final ItemForaEstoqueRepository itemForaEstoqueRepository;
 
     @Transactional
     public AuditoriaDetalheDto criar(AuditoriaRequestDto requestDto) {
@@ -122,6 +125,73 @@ public class AuditoriaService {
         return paraDetalhe(auditoria, itemAuditoriaRepository.findByAuditoriaId(id));
     }
 
+    @Transactional
+    public AuditoriaDetalheDto adicionarForaDoEstoque(Long auditoriaId,
+                                                      ItemForaEstoqueRequestDto requestDto) {
+        Auditoria auditoria = exigirAuditoria(auditoriaId);
+        exigirEmAndamento(auditoria);
+
+        ItemForaEstoque item = new ItemForaEstoque();
+        item.setAuditoria(auditoria);
+        preencherForaDoEstoque(requestDto, item);
+        itemForaEstoqueRepository.save(item);
+
+        return paraDetalhe(auditoria, itemAuditoriaRepository.findByAuditoriaId(auditoriaId));
+    }
+
+    @Transactional
+    public AuditoriaDetalheDto atualizarForaDoEstoque(Long auditoriaId, Long itemId,
+                                                      ItemForaEstoqueRequestDto requestDto) {
+        Auditoria auditoria = exigirAuditoria(auditoriaId);
+        exigirEmAndamento(auditoria);
+
+        ItemForaEstoque item = exigirForaDoEstoque(auditoriaId, itemId);
+        preencherForaDoEstoque(requestDto, item);
+        itemForaEstoqueRepository.save(item);
+
+        return paraDetalhe(auditoria, itemAuditoriaRepository.findByAuditoriaId(auditoriaId));
+    }
+
+    @Transactional
+    public AuditoriaDetalheDto removerForaDoEstoque(Long auditoriaId, Long itemId) {
+        Auditoria auditoria = exigirAuditoria(auditoriaId);
+        exigirEmAndamento(auditoria);
+
+        itemForaEstoqueRepository.delete(exigirForaDoEstoque(auditoriaId, itemId));
+
+        return paraDetalhe(auditoria, itemAuditoriaRepository.findByAuditoriaId(auditoriaId));
+    }
+
+    private ItemForaEstoque exigirForaDoEstoque(Long auditoriaId, Long itemId) {
+        ItemForaEstoque item = itemForaEstoqueRepository.findById(itemId)
+                .orElseThrow(() -> new NoSuchElementException("Item nao encontrado: " + itemId));
+
+        if (!item.getAuditoria().getId().equals(auditoriaId)) {
+            throw new NoSuchElementException("Item nao encontrado: " + itemId);
+        }
+
+        return item;
+    }
+
+    private void preencherForaDoEstoque(ItemForaEstoqueRequestDto requestDto,
+                                        ItemForaEstoque item) {
+        item.setDescricao(requestDto.descricao().trim());
+        item.setCodigo(textoOuNulo(requestDto.codigo()));
+        item.setUnidade(requestDto.unidade().trim());
+        item.setQuantidade(requestDto.quantidade());
+        item.setValorUnitario(requestDto.valorUnitario());
+        item.setLocal(textoOuNulo(requestDto.local()));
+        item.setObservacao(requestDto.observacao() == null ? "" : requestDto.observacao().trim());
+    }
+
+    private static String textoOuNulo(String texto) {
+        if (texto == null || texto.isBlank()) {
+            return null;
+        }
+
+        return texto.trim();
+    }
+
     private Auditoria exigirAuditoria(Long id) {
         return auditoriaRepository.findById(id)
                 .orElseThrow(() -> new NoSuchElementException("Auditoria nao encontrada: " + id));
@@ -183,7 +253,19 @@ public class AuditoriaService {
         return new AuditoriaDetalheDto(String.valueOf(auditoria.getId()), auditoria.getObraId(),
                 auditoria.getObraNome(), auditoria.getFilialNome(), auditoria.getResponsavel(),
                 auditoria.getSituacaoAuditoria(), auditoria.getCriadaEm(), auditoria.getConcluidaEm(),
-                referencia, itensDto, List.of(), null);
+                referencia, itensDto, foraDoEstoqueDe(auditoria), null);
+    }
+
+    private List<ItemForaEstoqueDto> foraDoEstoqueDe(Auditoria auditoria) {
+        return itemForaEstoqueRepository.findByAuditoriaId(auditoria.getId())
+                .stream().map(this::paraForaDto).toList();
+    }
+
+    private ItemForaEstoqueDto paraForaDto(ItemForaEstoque item) {
+        return new ItemForaEstoqueDto(String.valueOf(item.getId()), item.getDescricao(),
+                item.getCodigo(), item.getUnidade(), item.getQuantidade(),
+                item.getValorUnitario(), item.getLocal(),
+                item.getObservacao() == null ? "" : item.getObservacao());
     }
 
     private ItemAuditoriaDto paraItemDto(ItemAuditoria item) {
