@@ -4,8 +4,11 @@ import jakarta.persistence.EnumType;
 
 public enum FuncaoObra {
     RESIDENTE,
+    PRODUCAO,
+    ADM,
     ALMOXARIFE,
     GERENTE,
-    ENGENHEIRO,
+    GERENTE_GERAL,
+    DIRETOR,
     OUTRO
 }
