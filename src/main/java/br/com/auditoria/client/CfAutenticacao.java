@@ -1,11 +1,13 @@
 package br.com.auditoria.client;
 
 import br.com.auditoria.dto.cfobras.LoginCfDto;
+import br.com.auditoria.exception.CfIndisponivelException;
 import br.com.auditoria.dto.cfobras.TokenCfDto;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
+import org.springframework.web.client.RestClientException;
 
 import java.time.Duration;
 
@@ -33,13 +35,18 @@ public class CfAutenticacao {
 
     public String pegar() {
         if (token == null) {
-            TokenCfDto tokenCfDto = cf.post()
-                    .uri("/auth/login")
-                    .body(new LoginCfDto(email, senha))
-                    .retrieve()
-                    .body(TokenCfDto.class);
+            try {
+                TokenCfDto tokenCfDto = cf.post()
+                        .uri("/auth/login")
+                        .body(new LoginCfDto(email, senha))
+                        .retrieve()
+                        .body(TokenCfDto.class);
 
-            token = tokenCfDto.access_token();
+                token = tokenCfDto.access_token();
+            } catch (RestClientException falha) {
+                throw new CfIndisponivelException("Nao foi possivel autenticar no CF Obras.",
+                        falha);
+            }
         }
         return token;
     }

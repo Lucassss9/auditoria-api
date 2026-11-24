@@ -37,6 +37,12 @@ public class GlobalExceptionHandler {
         return new ErroDto(ex.getMessage(), null);
     }
 
+    @ExceptionHandler(CfIndisponivelException.class)
+    @ResponseStatus(HttpStatus.BAD_GATEWAY)
+    public ErroDto dependenciaForaDoAr(CfIndisponivelException ex) {
+        return new ErroDto(ex.getMessage(), null);
+    }
+
     @ExceptionHandler(ConflitoException.class)
     @ResponseStatus(HttpStatus.CONFLICT)
     public ErroDto conflito(ConflitoException ex) {
