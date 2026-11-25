@@ -1,0 +1,16 @@
+# Segredos. Nunca entram na imagem: as variaveis sao passadas na hora de rodar.
+.env
+rodar.ps1
+
+# Saida de build local. O container compila do zero.
+target/
+
+# Fotos gravadas em desenvolvimento.
+evidencias/
+
+.git/
+.gitignore
+.idea/
+*.iml
+docs/
+README.md
