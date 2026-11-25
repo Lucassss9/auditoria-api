@@ -25,16 +25,57 @@ public class EstoqueService {
         }
 
         List<InsumoEstoqueDto> daObra = daObra(estoqueDoCf.daFilialEmCache(obra.filialId()), obraId);
-        String procurado = semAcento(termo);
+        String procurado = aparar(termo);
 
         if (procurado.isEmpty()) {
             return daObra;
         }
 
+        boolean comAcento = !procurado.equals(semAcento(termo));
+        String agulha = comAcento ? procurado : semAcento(termo);
+
         return daObra.stream()
-                .filter(insumo -> semAcento(insumo.descricao()).contains(procurado)
-                        || semAcento(insumo.codigo()).contains(procurado))
+                .filter(insumo -> combina(insumo.descricao(), agulha, comAcento)
+                        || semAcento(insumo.codigo()).contains(semAcento(termo)))
                 .toList();
+    }
+
+    private static boolean combina(String descricao, String agulha, boolean comAcento) {
+        String texto = comAcento ? aparar(descricao) : semAcento(descricao);
+
+        if (temDigito(agulha)) {
+            return texto.contains(agulha);
+        }
+
+        int onde = texto.indexOf(agulha);
+
+        while (onde >= 0) {
+            if (onde == 0 || !Character.isLetterOrDigit(texto.charAt(onde - 1))) {
+                return true;
+            }
+
+            onde = texto.indexOf(agulha, onde + 1);
+        }
+
+        return false;
+    }
+
+    private static String aparar(String texto) {
+        if (texto == null) {
+            return "";
+        }
+
+        return texto.toLowerCase(Locale.ROOT).trim();
+    }
+
+    private static boolean temDigito(String texto) {
+        for (int i = 0; i < texto.length(); i++) {
+            if (Character.isDigit(texto.charAt(i))) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     public List<InsumoEstoqueDto> lerParaCongelar(ObraDto obra, String obraId) {
