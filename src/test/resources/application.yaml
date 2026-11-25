@@ -1,0 +1,20 @@
+spring:
+  datasource:
+    url: jdbc:h2:mem:auditoria;MODE=PostgreSQL;DB_CLOSE_DELAY=-1
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    open-in-view: false
+
+cf:
+  url: http://cf.de.mentira.invalido
+
+CF_URL: http://cf.de.mentira.invalido
+CF_EMAIL: teste@invalido
+CF_SENHA: teste
+AUDITORIA_ADMIN_EMAIL: admin@invalido
+AUDITORIA_ADMIN_SENHA: teste
+AUDITORIA_ADMIN_NOME: Administrador de Teste

@@ -1,12 +1,14 @@
 package br.com.auditoria.client;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 public class CfAutenticacaoTest {
 
     @Test
+    @EnabledIfEnvironmentVariable(named = "CF_SENHA", matches = ".+")
     void logaNoCfEDevolveToken() {
         CfAutenticacao cfAutenticacao = new CfAutenticacao(System.getenv("CF_URL"),
                 System.getenv("CF_EMAIL"), System.getenv("CF_SENHA"));
