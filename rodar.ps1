@@ -52,7 +52,7 @@ if ($faltando) {
 $jar = Join-Path $PSScriptRoot 'target\auditoria-api-0.0.1-SNAPSHOT.jar'
 
 if (-not (Test-Path $jar)) {
-    Write-Error "Nao achei o jar. Rode primeiro:  .\mvnw -DskipTests package"
+    Write-Error "Nao achei o jar. Rode primeiro:  .\mvnw clean -DskipTests package"
     exit 1
 }
 
