@@ -11,6 +11,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.web.authentication.logout.SecurityContextLogoutHandler;
 import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 import org.springframework.security.web.context.SecurityContextRepository;
 import org.springframework.security.web.csrf.CsrfToken;
@@ -45,9 +46,10 @@ public class UsuarioController {
     }
 
     @PostMapping("/logout")
-    public void logout(HttpServletRequest request) {
-        SecurityContextHolder.clearContext();
-        request.getSession(false).invalidate();
+    public void logout(HttpServletRequest request, HttpServletResponse response) {
+        Authentication identidade = SecurityContextHolder.getContext().getAuthentication();
+
+        new SecurityContextLogoutHandler().logout(request, response, identidade);
     }
 
     @GetMapping("/sessao")
