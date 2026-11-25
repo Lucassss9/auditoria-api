@@ -2,9 +2,15 @@ spring:
   application:
     name: auditoria-api
   servlet:
+    session:
+      timeout: 12h
     multipart:
       max-file-size: 8MB
       max-request-size: 10MB
+  session:
+    store-type: jdbc
+    jdbc:
+      initialize-schema: always
   jpa:
     hibernate:
       ddl-auto: update
