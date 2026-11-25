@@ -1,6 +1,10 @@
 spring:
   application:
     name: auditoria-api
+  servlet:
+    multipart:
+      max-file-size: 8MB
+      max-request-size: 10MB
   jpa:
     hibernate:
       ddl-auto: update
@@ -12,3 +16,5 @@ spring:
     password: ${POSTGRES_PASSWORD}
 cf:
   url: ${CF_URL}
+evidencias:
+  pasta: ${EVIDENCIAS_PASTA:evidencias}

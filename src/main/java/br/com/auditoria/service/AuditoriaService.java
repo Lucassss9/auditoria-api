@@ -6,6 +6,7 @@ import br.com.auditoria.dto.obra.ObraDto;
 import br.com.auditoria.entity.Auditoria;
 import br.com.auditoria.entity.ItemAuditoria;
 import br.com.auditoria.entity.Comunicado;
+import br.com.auditoria.entity.Evidencia;
 import br.com.auditoria.entity.ItemForaEstoque;
 import br.com.auditoria.enums.SituacaoAuditoria;
 import br.com.auditoria.enums.SituacaoItem;
@@ -14,10 +15,12 @@ import br.com.auditoria.repository.AuditoriaRepository;
 import br.com.auditoria.repository.ResponsavelRepository;
 import br.com.auditoria.repository.ItemAuditoriaRepository;
 import br.com.auditoria.repository.ComunicadoRepository;
+import br.com.auditoria.repository.EvidenciaRepository;
 import br.com.auditoria.repository.ItemForaEstoqueRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
 import java.util.*;
@@ -33,6 +36,8 @@ public class AuditoriaService {
     private final ItemAuditoriaRepository itemAuditoriaRepository;
     private final ItemForaEstoqueRepository itemForaEstoqueRepository;
     private final ComunicadoRepository comunicadoRepository;
+    private final EvidenciaRepository evidenciaRepository;
+    private final ArmazemDeEvidencias armazem;
     private final ResponsavelRepository responsavelRepository;
 
     @Transactional
@@ -240,6 +245,86 @@ public class AuditoriaService {
         }
     }
 
+    @Transactional
+    public AuditoriaDetalheDto anexarEvidencia(Long auditoriaId, Long itemId,
+                                               MultipartFile arquivo) {
+        Auditoria auditoria = exigirAuditoria(auditoriaId);
+        exigirEmAndamento(auditoria);
+
+        ItemAuditoria item = exigirItem(auditoriaId, itemId);
+
+        if (arquivo == null || arquivo.isEmpty()) {
+            throw new IllegalArgumentException("Nenhum arquivo enviado.");
+        }
+
+        if (!armazem.tipoAceito(arquivo.getContentType())) {
+            throw new IllegalArgumentException(
+                    "Formato nao aceito. Use JPG, PNG ou WEBP.");
+        }
+
+        if (arquivo.getSize() > ArmazemDeEvidencias.TAMANHO_MAXIMO) {
+            throw new IllegalArgumentException("A foto passa de 8 MB.");
+        }
+
+        Evidencia evidencia = new Evidencia();
+        evidencia.setItem(item);
+        evidencia.setNomeOriginal(nomeExibivel(arquivo.getOriginalFilename()));
+        evidencia.setArquivo(armazem.guardar(arquivo));
+        evidencia.setTipo(arquivo.getContentType().toLowerCase());
+        evidencia.setTamanho(arquivo.getSize());
+        evidencia.setEnviadaEm(LocalDateTime.now());
+        evidenciaRepository.save(evidencia);
+
+        return paraDetalhe(auditoria, itemAuditoriaRepository.findByAuditoriaId(auditoriaId));
+    }
+
+    @Transactional
+    public AuditoriaDetalheDto removerEvidencia(Long auditoriaId, Long evidenciaId) {
+        Auditoria auditoria = exigirAuditoria(auditoriaId);
+        exigirEmAndamento(auditoria);
+
+        Evidencia evidencia = evidenciaRepository.findById(evidenciaId)
+                .orElseThrow(() -> new NoSuchElementException(
+                        "Evidencia nao encontrada: " + evidenciaId));
+
+        if (!evidencia.getItem().getAuditoria().getId().equals(auditoriaId)) {
+            throw new NoSuchElementException("Evidencia nao encontrada: " + evidenciaId);
+        }
+
+        evidenciaRepository.delete(evidencia);
+        armazem.apagar(evidencia.getArquivo());
+
+        return paraDetalhe(auditoria, itemAuditoriaRepository.findByAuditoriaId(auditoriaId));
+    }
+
+    @Transactional(readOnly = true)
+    public Evidencia buscarEvidencia(Long evidenciaId) {
+        return evidenciaRepository.findById(evidenciaId)
+                .orElseThrow(() -> new NoSuchElementException(
+                        "Evidencia nao encontrada: " + evidenciaId));
+    }
+
+    private static String nomeExibivel(String nome) {
+        if (nome == null || nome.isBlank()) {
+            return "foto";
+        }
+
+        String limpo = nome.replaceAll("[\\/]", " ").trim();
+
+        return limpo.length() > 120 ? limpo.substring(0, 120) : limpo;
+    }
+
+    private ItemAuditoria exigirItem(Long auditoriaId, Long itemId) {
+        ItemAuditoria item = itemAuditoriaRepository.findById(itemId)
+                .orElseThrow(() -> new NoSuchElementException("Item nao encontrado: " + itemId));
+
+        if (!item.getAuditoria().getId().equals(auditoriaId)) {
+            throw new NoSuchElementException("Item nao encontrado: " + itemId);
+        }
+
+        return item;
+    }
+
     private Auditoria exigirAuditoria(Long id) {
         return auditoriaRepository.findById(id)
                 .orElseThrow(() -> new NoSuchElementException("Auditoria nao encontrada: " + id));
@@ -305,6 +390,18 @@ public class AuditoriaService {
                 referencia, itensDto, foraDoEstoqueDe(auditoria), comunicadoDe(auditoria));
     }
 
+    private List<EvidenciaDto> evidenciasDe(ItemAuditoria item) {
+        List<EvidenciaDto> evidencias = new ArrayList<>();
+
+        for (Evidencia evidencia : evidenciaRepository.findByItemId(item.getId())) {
+            evidencias.add(new EvidenciaDto(String.valueOf(evidencia.getId()),
+                    evidencia.getNomeOriginal(), "/api/evidencias/" + evidencia.getId(),
+                    evidencia.getTamanho(), evidencia.getEnviadaEm()));
+        }
+
+        return List.copyOf(evidencias);
+    }
+
     private ComunicadoDto comunicadoDe(Auditoria auditoria) {
         return comunicadoRepository.findByAuditoriaId(auditoria.getId())
                 .map(comunicado -> new ComunicadoDto(List.copyOf(comunicado.getDestinatariosIds()),
@@ -330,7 +427,8 @@ public class AuditoriaService {
                 item.getDescricao(), item.getUnidade(), item.getQuantidadeCongelada(),
                 item.getValorUnitario(), item.getLista(), item.getQuantidadeContada(),
                 item.getSituacaoItem(), item.getMotivo(), item.getLocal(),
-                item.getObservacao() == null ? "" : item.getObservacao());
+                item.getObservacao() == null ? "" : item.getObservacao(),
+                evidenciasDe(item));
     }
 
 

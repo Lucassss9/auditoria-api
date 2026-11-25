@@ -3,13 +3,19 @@ package br.com.auditoria.controller;
 import br.com.auditoria.dto.auditoria.AuditoriaDetalheDto;
 import br.com.auditoria.dto.auditoria.AuditoriaRequestDto;
 import br.com.auditoria.dto.auditoria.ComunicadoRequestDto;
+import br.com.auditoria.entity.Evidencia;
+import br.com.auditoria.service.ArmazemDeEvidencias;
 import br.com.auditoria.dto.auditoria.ContagemItemDto;
 import br.com.auditoria.dto.auditoria.ItemForaEstoqueRequestDto;
 import br.com.auditoria.service.AuditoriaService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.core.io.FileSystemResource;
+import org.springframework.core.io.Resource;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -20,6 +26,7 @@ import java.util.List;
 public class AuditoriaController {
 
     private final AuditoriaService auditoriaService;
+    private final ArmazemDeEvidencias armazem;
 
     @PostMapping("/auditorias")
     @ResponseStatus(HttpStatus.CREATED)
@@ -71,6 +78,34 @@ public class AuditoriaController {
             @PathVariable Long auditoriaId,
             @Valid @RequestBody ComunicadoRequestDto requestDto) {
         return auditoriaService.salvarComunicado(auditoriaId, requestDto);
+    }
+
+    @PostMapping("/auditorias/{auditoriaId}/itens/{itemId}/evidencias")
+    @ResponseStatus(HttpStatus.CREATED)
+    public AuditoriaDetalheDto anexarEvidencia(@PathVariable Long auditoriaId,
+                                               @PathVariable Long itemId,
+                                               @RequestParam("arquivo") MultipartFile arquivo) {
+        return auditoriaService.anexarEvidencia(auditoriaId, itemId, arquivo);
+    }
+
+    @DeleteMapping("/auditorias/{auditoriaId}/evidencias/{evidenciaId}")
+    public AuditoriaDetalheDto removerEvidencia(@PathVariable Long auditoriaId,
+                                                @PathVariable Long evidenciaId) {
+        return auditoriaService.removerEvidencia(auditoriaId, evidenciaId);
+    }
+
+    @GetMapping("/evidencias/{id}")
+    public ResponseEntity<Resource> baixarEvidencia(@PathVariable Long id) {
+        Evidencia evidencia = auditoriaService.buscarEvidencia(id);
+        Resource arquivo = new FileSystemResource(armazem.caminhoDe(evidencia.getArquivo()));
+
+        if (!arquivo.exists()) {
+            return ResponseEntity.notFound().build();
+        }
+
+        return ResponseEntity.ok()
+                .contentType(MediaType.parseMediaType(evidencia.getTipo()))
+                .body(arquivo);
     }
 
     @PostMapping("/auditorias/{id}/concluir")

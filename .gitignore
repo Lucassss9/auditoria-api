@@ -35,3 +35,5 @@ build/
 
 # front compilado, gerado pelo ng build
 src/main/resources/static/
+
+evidencias/
