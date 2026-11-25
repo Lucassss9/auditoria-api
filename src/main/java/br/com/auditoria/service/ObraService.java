@@ -3,6 +3,7 @@ package br.com.auditoria.service;
 import br.com.auditoria.dto.obra.ContagemPorObra;
 import br.com.auditoria.dto.obra.FilialDto;
 import br.com.auditoria.dto.obra.ObraDto;
+import br.com.auditoria.enums.Situacao;
 import br.com.auditoria.repository.AuditoriaRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -12,6 +13,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
 
 @Service
 @RequiredArgsConstructor
@@ -21,8 +23,14 @@ public class ObraService {
     private final AuditoriaRepository auditoriaRepository;
 
     @Transactional(readOnly = true)
-    public List<ObraDto> listar() {
-        return comTotais(catalogo.listar());
+    public List<ObraDto> listar(Situacao situacao) {
+        List<ObraDto> obras = comTotais(catalogo.listar());
+
+        if (situacao == null) {
+            return obras;
+        }
+
+        return obras.stream().filter(obra -> obra.situacao() == situacao).toList();
     }
 
     @Transactional(readOnly = true)
@@ -30,7 +38,7 @@ public class ObraService {
         ObraDto obra = catalogo.buscarPorId(id);
 
         if (obra == null) {
-            return null;
+            throw new NoSuchElementException("Obra nao encontrada: " + id);
         }
 
         return comTotais(List.of(obra)).getFirst();

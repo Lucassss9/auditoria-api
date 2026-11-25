@@ -2,8 +2,7 @@ package br.com.auditoria.controller;
 
 import br.com.auditoria.dto.usuario.UsuarioRequestDto;
 import br.com.auditoria.dto.usuario.UsuarioResponseDto;
-import br.com.auditoria.entity.Usuario;
-import br.com.auditoria.repository.UsuarioRepository;
+import br.com.auditoria.service.UsuarioService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
@@ -22,12 +21,12 @@ import org.springframework.web.bind.annotation.*;
 public class UsuarioController {
 
     private final AuthenticationManager manager;
-    private final UsuarioRepository usuarioRepository;
+    private final UsuarioService usuarioService;
     private final SecurityContextRepository cofre = new HttpSessionSecurityContextRepository();
 
-    public UsuarioController(AuthenticationManager manager, UsuarioRepository usuarioRepository) {
+    public UsuarioController(AuthenticationManager manager, UsuarioService usuarioService) {
         this.manager = manager;
-        this.usuarioRepository = usuarioRepository;
+        this.usuarioService = usuarioService;
     }
 
     @PostMapping("/login")
@@ -42,11 +41,7 @@ public class UsuarioController {
         SecurityContextHolder.setContext(envelope);
         cofre.saveContext(envelope, request, response);
 
-        Usuario usuario = usuarioRepository.findByEmail(identidade.getName())
-                .orElseThrow();
-
-        return new UsuarioResponseDto(usuario.getId(), usuario.getNome(),
-                usuario.getEmail(),  usuario.getCargo());
+        return usuarioService.porEmail(identidade.getName());
     }
 
     @PostMapping("/logout")
@@ -59,11 +54,7 @@ public class UsuarioController {
     public UsuarioResponseDto sessao() {
         Authentication identidade = SecurityContextHolder.getContext().getAuthentication();
 
-        Usuario usuario = usuarioRepository.findByEmail(identidade.getName())
-                .orElseThrow();
-
-        return new UsuarioResponseDto(usuario.getId(), usuario.getNome(),
-                usuario.getEmail(),  usuario.getCargo());
+        return usuarioService.porEmail(identidade.getName());
     }
 
     @GetMapping("/csrf")
